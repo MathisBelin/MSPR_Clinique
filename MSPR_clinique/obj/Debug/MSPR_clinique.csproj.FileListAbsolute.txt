@@ -90,4 +90,3 @@ E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_cliniqu
 E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_clinique\bin\Microsoft.IdentityModel.Tokens.xml
 E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_clinique\bin\System.IdentityModel.Tokens.Jwt.xml
 E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_clinique\bin\Twilio.xml
-E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_clinique\obj\Debug\MSPR_clinique.csproj.AssemblyReference.cache

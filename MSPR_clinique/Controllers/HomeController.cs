@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.DirectoryServices;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -31,10 +32,21 @@ namespace MSPR_clinique.Controllers
 
             return View();
         }
+
+        public static DirectoryEntry GetDirectoryEntry()
+        {
+            DirectoryEntry de = new DirectoryEntry();
+            de.Path = "LDAP://192.168.1.1/CN=Users;DC=ad-mspr";
+                de.Username = @"ad-mspr\mathis";
+            de.Password = "Xefimdp69140";
+            return de;
+        }
+
         public ActionResult Login(string User)
         {
             try
             {
+                //GetDirectoryEntry();
                 string serieNombre = "";
                 Random aleatoire = new Random();
                 for (int i = 0; i <= 5; i++)
@@ -68,6 +80,7 @@ namespace MSPR_clinique.Controllers
 
                     try
                     {
+                        ViewBag.User = $"{User}";
                         con.Open();
                         SqlCommand commande2 = con.CreateCommand();
                         commande2.CommandText = $@"UPDATE [MSPR_09_09_2022].[dbo].[Users]
@@ -76,12 +89,10 @@ namespace MSPR_clinique.Controllers
                         SqlDataReader reader2 = commande2.ExecuteReader();
                         con.Close();
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
 
                     }
-
-
                     return View("Verification");
                 }
 
@@ -98,29 +109,45 @@ namespace MSPR_clinique.Controllers
             }
         }
 
-        public ActionResult LoadPage(string token)
+        public ActionResult LoadPage(string token, string UserName)
         {
+            SqlConnection con = new SqlConnection("Server=LAPTOP-114PRVUO; Database=MSPR_09_09_2022; Integrated Security=True;");
+            string TokenInBDD = "";
+
             try
             {
-                SqlConnection con = new SqlConnection("Server=LAPTOP-114PRVUO; Database=MSPR_09_09_2022; Integrated Security=True;");
                 con.Open();
                 SqlCommand commande = con.CreateCommand();
-                commande.CommandText = $@"SELECT login 
+                commande.CommandText = $@"SELECT token 
                                          FROM Users
-                                         where login = '{token}'";
+                                         where login = '{UserName}' and token = '{token}'";
                 SqlDataReader reader = commande.ExecuteReader();
-                while(reader.Read())
+                while (reader.Read())
                 {
+                    TokenInBDD = reader[0].ToString();
+                }
 
+                con.Close();
+
+                if(token == TokenInBDD)
+                {
+                    return View("Index");
+                }
+
+                else
+                {
+                    con.Close();
+                    ViewBag.Message = "Code incorrecte !";
+                    return View("Verification");
                 }
             }
 
             catch (Exception ex)
             {
-
+                con.Close();
+                ViewBag.Message = ex.Message;
+                return View("Verification");
             }
-
-            return View("Index");
         }
 
         public ActionResult About()
