@@ -5,6 +5,7 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Resources;
 using System.Web;
 using System.Web.Mvc;
 
@@ -15,7 +16,6 @@ namespace MSPR_clinique.Controllers
         public ActionResult Connection()
         {
             string user = User.Identity.Name;
-
             if (user != null) // user connecté
             {
                 // generer otp
@@ -33,15 +33,6 @@ namespace MSPR_clinique.Controllers
             return View();
         }
 
-        public static DirectoryEntry GetDirectoryEntry()
-        {
-            DirectoryEntry de = new DirectoryEntry();
-            de.Path = "LDAP://192.168.1.1/CN=Users;DC=ad-mspr";
-                de.Username = @"ad-mspr\mathis";
-            de.Password = "Xefimdp69140";
-            return de;
-        }
-
         public ActionResult Login(string User)
         {
             try
@@ -54,8 +45,7 @@ namespace MSPR_clinique.Controllers
                     int entierUnChiffre = aleatoire.Next(10);
                     serieNombre += Convert.ToString(entierUnChiffre);
                 }
-
-                SqlConnection con = new SqlConnection("Server=LAPTOP-114PRVUO; Database=MSPR_09_09_2022; Integrated Security=True;");
+                SqlConnection con = ConnectionDatabase();
                 con.Open();
                 SqlCommand commande = con.CreateCommand();
                 commande.CommandText = $@"SELECT login 
@@ -83,7 +73,7 @@ namespace MSPR_clinique.Controllers
                         ViewBag.User = $"{User}";
                         con.Open();
                         SqlCommand commande2 = con.CreateCommand();
-                        commande2.CommandText = $@"UPDATE [MSPR_09_09_2022].[dbo].[Users]
+                        commande2.CommandText = $@"UPDATE Users
                                               SET [token] = '{serieNombre}'
                                               where login = '{User}'";
                         SqlDataReader reader2 = commande2.ExecuteReader();
@@ -111,7 +101,7 @@ namespace MSPR_clinique.Controllers
 
         public ActionResult LoadPage(string token, string UserName)
         {
-            SqlConnection con = new SqlConnection("Server=LAPTOP-114PRVUO; Database=MSPR_09_09_2022; Integrated Security=True;");
+            SqlConnection con = ConnectionDatabase();
             string TokenInBDD = "";
 
             try
@@ -167,6 +157,45 @@ namespace MSPR_clinique.Controllers
             ViewBag.Message = "Your contact page.";
 
             return View();
+        }
+        public static DirectoryEntry GetDirectoryEntryByLogin(String login)
+        {
+            DirectoryEntry de;
+            try
+            {
+                de = new DirectoryEntry();
+                de.Path = "LDAP://AD-MSPR-VM";
+                de.Username = "mathis";
+                de.Password = "Xefimdp69140";
+                DirectorySearcher searcher = new DirectorySearcher(de);
+                searcher.Filter = "(objectClass=user)";
+
+                foreach (SearchResult result in searcher.FindAll())
+                {
+                    DirectoryEntry DirEntry = result.GetDirectoryEntry();
+                    Console.WriteLine("Nom", DirEntry.Properties["cn"].Value);
+                }
+            } catch (Exception e)
+            {
+                throw e;
+            }
+
+            return de;
+        }
+
+        public static SqlConnection ConnectionDatabase()
+        {
+            try
+            {
+                SqlConnection sql = new SqlConnection("Server=" + Properties.Resources.DB_SERVER + ";Database=" + Properties.Resources.DB_DATABASE +
+                     ";User Id=" + Properties.Resources.DB_USERNAME + ";Password=" + Properties.Resources.DB_PASSWORD + ";");
+
+                return sql;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
     }
 }
