@@ -13,6 +13,7 @@ namespace MSPR_clinique.Controllers
 {
     public class HomeController : Controller
     {
+        Adapter adapter = new Adapter();
         public ActionResult Connection()
         {
             string user = User.Identity.Name;
@@ -33,65 +34,40 @@ namespace MSPR_clinique.Controllers
             return View();
         }
 
-        public static string GetIpInBDD(int IdUser)
-        {
-            string IpAdresse = "";
-            SqlConnection cnn = ConnectionDatabase();
-            try
-            {
-                cnn.Open();
-                SqlCommand commande = cnn.CreateCommand();
-                commande.CommandText = $@"SELECT ip_addresse 
-                                         FROM log
-                                         where id = {IdUser}";
-                SqlDataReader reader = commande.ExecuteReader();
-                while (reader.Read())
-                {
-                    IpAdresse = reader[0].ToString();
-                }
-                return IpAdresse;
-            }
-            catch (Exception ex)
-            {
-                cnn.Close();
-                return IpAdresse;
-            }
-        }
 
+        //Quand l'utilisateur à renseigné ses informations
         public ActionResult Login(string User)
         {
             try
             {
                 int IdUser = 0;
+
+                //Récupère le nom du poste utilisé
                 string host = Dns.GetHostName();
+
+                //Récupère l'adresse IP du poste utilisé
                 string ipLocal = Dns.GetHostByName(host).AddressList[0].ToString();
 
-                //GetDirectoryEntry();
-                string serieNombre = "";
-                Random aleatoire = new Random();
-                for (int i = 0; i <= 5; i++)
-                {
-                    int entierUnChiffre = aleatoire.Next(10);
-                    serieNombre += Convert.ToString(entierUnChiffre);
-                }
-                SqlConnection con = ConnectionDatabase();
-                con.Open();
-                SqlCommand commande = con.CreateCommand();
-                commande.CommandText = $@"SELECT id,login 
-                                         FROM Users
-                                         where login = '{User}'";
-                SqlDataReader reader = commande.ExecuteReader();
-                while(reader.Read())
-                {
-                    IdUser = int.Parse(reader[0].ToString());
-                }
+                //Vérification si l'utilisateur existe
+                IdUser = adapter.GetIdUser(User);
 
-                if (reader.HasRows == true)
+                if (IdUser != null)
                 {
-                    string ipInBDD = GetIpInBDD(IdUser);
-                    con.Close();
-                    if(ipLocal != ipInBDD)
+                    //Vérification sa dernière adresse IP de connexion
+                    string ipInBDD = adapter.GetIpInBDD(IdUser);
+
+                    if (ipLocal != ipInBDD)
                     {
+                        //Generate random number serie
+                        string serieNombre = "";
+                        Random aleatoire = new Random();
+                        for (int i = 0; i <= 5; i++)
+                        {
+                            int entierUnChiffre = aleatoire.Next(10);
+                            serieNombre += Convert.ToString(entierUnChiffre);
+                        }
+
+                        //Envoie d'un mail avec la serie de nombres générée aléatoirement
                         MailMessage mail = new MailMessage();
                         MailAddress fromAddress = new MailAddress("matbelin5@gmail.com");
                         mail.IsBodyHtml = true;
@@ -104,33 +80,25 @@ namespace MSPR_clinique.Controllers
                         smtpServer.Host = "localhost";
                         smtpServer.Send(mail);
 
-                        try
-                        {
-                            ViewBag.IpAdresse = ipLocal;
-                            ViewBag.UserId = IdUser;
-                            ViewBag.User = $"{User}";
-                            con.Open();
-                            SqlCommand commande2 = con.CreateCommand();
-                            commande2.CommandText = $@"UPDATE Users
-                                              SET [token] = '{serieNombre}'
-                                              where login = '{User}'";
-                            SqlDataReader reader2 = commande2.ExecuteReader();
-                            con.Close();
-                        }
-                        catch (Exception ex)
-                        {
+                        //Stockage des informaions dans des ViewBags
+                        ViewBag.IpAdresse = ipLocal;
+                        ViewBag.UserId = IdUser;
+                        ViewBag.User = $"{User}";
 
-                        }
+                        //Modificaion dans la BDD du token à renseigné
+                        adapter.UpdateUserToken(serieNombre, User);
+
                         return View("Verification");
                     }
+
                     else
                     {
                         return View("Index");
                     }
                 }
+
                 else
                 {
-                    con.Close();
                     return View("Connection");
                 }
             }
@@ -141,35 +109,25 @@ namespace MSPR_clinique.Controllers
             }
         }
 
+        //Une foie que l'utilisateur à saisit le token
         public ActionResult LoadPage(string token, string UserName, string UserId, string IpLocal)
         {
-            SqlConnection con = ConnectionDatabase();
             string TokenInBDD = "";
-
             try
             {
-                con.Open();
-                SqlCommand commande = con.CreateCommand();
-                commande.CommandText = $@"SELECT token 
-                                         FROM Users
-                                         where login = '{UserName}' and token = '{token}'";
-                SqlDataReader reader = commande.ExecuteReader();
-                while (reader.Read())
-                {
-                    TokenInBDD = reader[0].ToString();
-                }
+                //Récupération du token/liste de nombres en BDD
+                TokenInBDD = adapter.GettokenInBDD(UserName, token);
 
-                con.Close();
-
+                //Vérification si le token saisit est correcte
                 if (token == TokenInBDD)
                 {
-                    UpdateIpInBDD(UserId, IpLocal);
+                    //Modification de l'addresse IP de connexion
+                    adapter.UpdateIpInBDD(UserId, IpLocal);
                     return View("Index");
                 }
 
                 else
                 {
-                    con.Close();
                     ViewBag.Message = "Code incorrecte !";
                     return View("Verification");
                 }
@@ -177,24 +135,9 @@ namespace MSPR_clinique.Controllers
 
             catch (Exception ex)
             {
-                con.Close();
                 ViewBag.Message = ex.Message;
                 return View("Verification");
             }
-        }
-
-        public static void UpdateIpInBDD(string UserId, string IpLocal)
-        {
-            SqlConnection con = ConnectionDatabase();
-            con.Open();
-
-            SqlCommand commande2 = con.CreateCommand();
-            commande2.CommandText = $@"UPDATE log
-                                              SET [ip_addresse] = '{IpLocal}'
-                                              where id = '{UserId}'";
-            SqlDataReader reader2 = commande2.ExecuteReader();
-            con.Close();
-
         }
 
         public ActionResult About()
@@ -239,21 +182,6 @@ namespace MSPR_clinique.Controllers
             }
 
             return de;
-        }
-
-        public static SqlConnection ConnectionDatabase()
-        {
-            try
-            {
-                SqlConnection sql = new SqlConnection("Server=" + Properties.Resources.DB_SERVER + ";Database=" + Properties.Resources.DB_DATABASE +
-                     ";User Id=" + Properties.Resources.DB_USERNAME + ";Password=" + Properties.Resources.DB_PASSWORD + ";");
-
-                return sql;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
         }
     }
 }
