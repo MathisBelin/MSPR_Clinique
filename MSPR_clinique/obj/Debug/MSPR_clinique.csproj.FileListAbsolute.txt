@@ -189,3 +189,5 @@ C:\Users\Kylian\Desktop\Cours\MSPR\Authentification\MSPR_Clinique\MSPR_clinique\
 C:\Users\Kylian\Desktop\Cours\MSPR\Authentification\MSPR_Clinique\MSPR_clinique\obj\Debug\MSPR_clinique.dll
 C:\Users\Kylian\Desktop\Cours\MSPR\Authentification\MSPR_Clinique\MSPR_clinique\obj\Debug\MSPR_clinique.pdb
 >>>>>>> Stashed changes
+E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_clinique\obj\Debug\MSPR_clinique.Properties.Resources.resources
+E:\Xefi Academy\Projet\MSPR\ProjetAuthentificationWeb\MSPR_clinique\MSPR_clinique\obj\Debug\MSPR_clinique.csproj.GenerateResource.cache

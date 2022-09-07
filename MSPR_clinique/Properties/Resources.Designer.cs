@@ -97,7 +97,7 @@ namespace MSPR_clinique.Properties {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à 192.168.190.100.
+        ///   Recherche une chaîne localisée semblable à 192.168.128.100.
         /// </summary>
         internal static string DB_SERVER {
             get {

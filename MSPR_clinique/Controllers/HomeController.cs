@@ -33,10 +33,39 @@ namespace MSPR_clinique.Controllers
             return View();
         }
 
+        public static string GetIpInBDD(int IdUser)
+        {
+            string IpAdresse = "";
+            SqlConnection cnn = ConnectionDatabase();
+            try
+            {
+                cnn.Open();
+                SqlCommand commande = cnn.CreateCommand();
+                commande.CommandText = $@"SELECT ip_addresse 
+                                         FROM log
+                                         where id = {IdUser}";
+                SqlDataReader reader = commande.ExecuteReader();
+                while (reader.Read())
+                {
+                    IpAdresse = reader[0].ToString();
+                }
+                return IpAdresse;
+            }
+            catch (Exception ex)
+            {
+                cnn.Close();
+                return IpAdresse;
+            }
+        }
+
         public ActionResult Login(string User)
         {
             try
             {
+                int IdUser = 0;
+                string host = Dns.GetHostName();
+                string ipLocal = Dns.GetHostByName(host).AddressList[0].ToString();
+
                 //GetDirectoryEntry();
                 string serieNombre = "";
                 Random aleatoire = new Random();
@@ -48,44 +77,57 @@ namespace MSPR_clinique.Controllers
                 SqlConnection con = ConnectionDatabase();
                 con.Open();
                 SqlCommand commande = con.CreateCommand();
-                commande.CommandText = $@"SELECT login 
+                commande.CommandText = $@"SELECT id,login 
                                          FROM Users
                                          where login = '{User}'";
                 SqlDataReader reader = commande.ExecuteReader();
+                while(reader.Read())
+                {
+                    IdUser = int.Parse(reader[0].ToString());
+                }
 
                 if (reader.HasRows == true)
                 {
+                    string ipInBDD = GetIpInBDD(IdUser);
                     con.Close();
-                    MailMessage mail = new MailMessage();
-                    MailAddress fromAddress = new MailAddress("matbelin5@gmail.com");
-                    mail.IsBodyHtml = true;
-                    mail.From = fromAddress;
-                    mail.To.Add("matbelin6@gmail.com");
-                    mail.Subject = $"Articles éronnés";
-                    mail.Body = $@"Code de validation : {serieNombre}";
-
-                    SmtpClient smtpServer = new SmtpClient();
-                    smtpServer.Host = "localhost";
-                    smtpServer.Send(mail);
-
-                    try
+                    if(ipLocal != ipInBDD)
                     {
-                        ViewBag.User = $"{User}";
-                        con.Open();
-                        SqlCommand commande2 = con.CreateCommand();
-                        commande2.CommandText = $@"UPDATE Users
+                        MailMessage mail = new MailMessage();
+                        MailAddress fromAddress = new MailAddress("matbelin5@gmail.com");
+                        mail.IsBodyHtml = true;
+                        mail.From = fromAddress;
+                        mail.To.Add("matbelin6@gmail.com");
+                        mail.Subject = $"Articles éronnés";
+                        mail.Body = $@"Code de validation : {serieNombre}";
+
+                        SmtpClient smtpServer = new SmtpClient();
+                        smtpServer.Host = "localhost";
+                        smtpServer.Send(mail);
+
+                        try
+                        {
+                            ViewBag.IpAdresse = ipLocal;
+                            ViewBag.UserId = IdUser;
+                            ViewBag.User = $"{User}";
+                            con.Open();
+                            SqlCommand commande2 = con.CreateCommand();
+                            commande2.CommandText = $@"UPDATE Users
                                               SET [token] = '{serieNombre}'
                                               where login = '{User}'";
-                        SqlDataReader reader2 = commande2.ExecuteReader();
-                        con.Close();
+                            SqlDataReader reader2 = commande2.ExecuteReader();
+                            con.Close();
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                        return View("Verification");
                     }
-                    catch (Exception ex)
+                    else
                     {
-
+                        return View("Index");
                     }
-                    return View("Verification");
                 }
-
                 else
                 {
                     con.Close();
@@ -99,7 +141,7 @@ namespace MSPR_clinique.Controllers
             }
         }
 
-        public ActionResult LoadPage(string token, string UserName)
+        public ActionResult LoadPage(string token, string UserName, string UserId, string IpLocal)
         {
             SqlConnection con = ConnectionDatabase();
             string TokenInBDD = "";
@@ -119,8 +161,9 @@ namespace MSPR_clinique.Controllers
 
                 con.Close();
 
-                if(token == TokenInBDD)
+                if (token == TokenInBDD)
                 {
+                    UpdateIpInBDD(UserId, IpLocal);
                     return View("Index");
                 }
 
@@ -138,6 +181,20 @@ namespace MSPR_clinique.Controllers
                 ViewBag.Message = ex.Message;
                 return View("Verification");
             }
+        }
+
+        public static void UpdateIpInBDD(string UserId, string IpLocal)
+        {
+            SqlConnection con = ConnectionDatabase();
+            con.Open();
+
+            SqlCommand commande2 = con.CreateCommand();
+            commande2.CommandText = $@"UPDATE log
+                                              SET [ip_addresse] = '{IpLocal}'
+                                              where id = '{UserId}'";
+            SqlDataReader reader2 = commande2.ExecuteReader();
+            con.Close();
+
         }
 
         public ActionResult About()
@@ -175,7 +232,8 @@ namespace MSPR_clinique.Controllers
                     DirectoryEntry DirEntry = result.GetDirectoryEntry();
                     Console.WriteLine("Nom", DirEntry.Properties["cn"].Value);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw e;
             }

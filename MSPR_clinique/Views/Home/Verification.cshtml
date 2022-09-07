@@ -29,8 +29,10 @@
                     <div class="login-wrap p-0">
                         <form action="#" class="signin-form">
                             <div style="color:red"><strong>@ViewBag.Message</strong></div>
-                            <br/>
-                            <input name="UserName" type="hidden" value="@ViewBag.User"/>
+                            <br />
+                            <input name="UserId" type="hidden" value="@ViewBag.UserId" />
+                            <input name="IpLocal" type="hidden" value="@ViewBag.IpAdresse" />
+                            <input name="UserName" type="hidden" value="@ViewBag.User" />
                             <div class="form-group">
                                 <input type="text" id="token" name="token" class="form-control" placeholder="Entez votre code à 6 chiffres" required>
                             </div>

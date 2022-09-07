@@ -132,7 +132,7 @@
     <comment>password</comment>
   </data>
   <data name="DB_SERVER" xml:space="preserve">
-    <value>192.168.190.100</value>
+    <value>192.168.128.100</value>
     <comment>IP</comment>
   </data>
   <data name="DB_USERNAME" xml:space="preserve">
